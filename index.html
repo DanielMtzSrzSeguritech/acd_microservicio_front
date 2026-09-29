@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ACD · Centro de operaciones</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <!-- Local styles -->
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles/modules/dashboard.css" />
+  <link rel="stylesheet" href="styles/modules/tickets.css" />
+  <link rel="stylesheet" href="styles/modules/candidates.css" />
+</head>
+<body>
+
+  <!-- ════════════════════════════ SIDEBAR ════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon"><i class="fa-solid fa-tower-broadcast"></i></span>
+      <span class="logo-text">ACD System</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#view=dashboard" class="nav-item active" data-section="dashboard">
+        <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
+      </a>
+      <a href="#view=tickets-list" class="nav-item" data-section="tickets-list">
+        <i class="fa-solid fa-list-check"></i><span>Tickets</span>
+      </a>
+      <a href="#view=engineers" class="nav-item" data-section="engineers">
+        <i class="fa-solid fa-user-group"></i><span>Ingenieros</span>
+      </a>
+      <a href="#view=workforce" class="nav-item" data-section="workforce">
+        <i class="fa-solid fa-users-gear"></i><span>Sesiones</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="env-badge">PREPROD</div>
+      <div class="sidebar-version">v1.0.0</div>
+    </div>
+  </aside>
+
+  <!-- ════════════════════════════ MAIN ════════════════════════════ -->
+  <main class="main-content" id="mainContent">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="topbar-title">
+        <span>Centro de operaciones</span>
+        <span class="topbar-subtitle">ACD PREPROD</span>
+      </div>
+      <div class="topbar-right">
+        <!-- Ticket ID input -->
+        <div class="ticket-input-group" id="ticketActionBar">
+          <label for="ticketIdInput"><i class="fa-solid fa-hashtag"></i> Ticket</label>
+          <input type="text" id="ticketIdInput" value="10089241" placeholder="Ticket ID" />
+          <button id="loadBtn" title="Recargar datos">
+            <i class="fa-solid fa-rotate"></i> Cargar
+          </button>
+          <button id="simulateBtn" title="Simulación ACD dry-run — no asigna">
+            <i class="fa-solid fa-play"></i> Simular despacho
+          </button>
+        </div>
+        <!-- GS PREPROD auth indicator -->
+        <div class="gs-auth-status" id="gsAuthStatus">
+          <span class="dot dot-error" id="gsAuthDot"></span>
+          <span id="gsAuthText">GS: no autenticado</span>
+          <button id="gsAuthBtn" class="btn-gs-auth" title="Autenticar contra GS PREPROD">
+            <i class="fa-solid fa-key"></i> Auth GS
+          </button>
+        </div>
+        <!-- Live clock -->
+        <div class="topbar-clock" id="liveClock"></div>
+        <!-- ACD status -->
+        <div class="connection-status" id="connectionStatus">
+          <span class="dot dot-loading"></span>
+          <span id="statusText">Conectando…</span>
+        </div>
+      </div>
+    </header>
+
+    <div id="dashboardSection" class="route-view">
+    <div class="dashboard-intro">
+      <div>
+        <span class="dashboard-eyebrow">ACD · PREPROD</span>
+        <h1>Panorama operativo</h1>
+        <p>Ingenieros con ubicación registrada y tickets próximos a vencer.</p>
+      </div>
+    </div>
+    <!-- ── SIMULATED DATA ALERT ── -->
+    <div class="simulated-alert" id="simulatedAlert" hidden>
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <strong>Información de prueba.</strong>
+    </div>
+
+    <!-- ══════════════ TOP SUMMARY CARDS ══════════════ -->
+    <section class="cards-grid" id="cardsGrid">
+
+      <div class="card" id="cardTicket">
+        <div class="card-icon"><i class="fa-solid fa-ticket"></i></div>
+        <div class="card-body">
+          <div class="card-label">Ticket Actual</div>
+          <div class="card-value" id="cardTicketId">—</div>
+        </div>
+      </div>
+
+      <div class="card" id="cardEstado">
+        <div class="card-icon"><i class="fa-solid fa-circle-info"></i></div>
+        <div class="card-body">
+          <div class="card-label">Estado</div>
+          <div class="card-value" id="cardEstadoVal">—</div>
+        </div>
+      </div>
+
+      <div class="card" id="cardCandidatos">
+        <div class="card-icon"><i class="fa-solid fa-users"></i></div>
+        <div class="card-body">
+          <div class="card-label">Candidatos</div>
+          <div class="card-value" id="cardCandidatosVal">—</div>
+        </div>
+      </div>
+
+      <div class="card" id="cardGps">
+        <div class="card-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+        <div class="card-body">
+          <div class="card-label">Con GPS</div>
+          <div class="card-value" id="cardGpsVal">—</div>
+        </div>
+      </div>
+
+      <div class="card" id="cardServicio">
+        <div class="card-icon"><i class="fa-solid fa-wrench"></i></div>
+        <div class="card-body">
+          <div class="card-label">Servicio</div>
+          <div class="card-value card-value-sm" id="cardServicioVal">—</div>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="acd-summary" id="acdSummary" aria-label="Métricas operativas ACD">
+      <div class="panel-header"><i class="fa-solid fa-chart-line"></i><span>Actividad ACD</span><button type="button" id="acdMetricsRefresh" class="btn-tkt-ctrl">Actualizar</button></div>
+      <p id="acdMetricsStatus" class="tkt-scope-note">Cargando métricas…</p>
+      <div class="acd-summary-grid">
+        <div><strong id="acdJobsTotal">NO DISPONIBLE</strong><span>Jobs recibidos</span></div>
+        <div><strong id="acdFailedThree">NO DISPONIBLE</strong><span>Fallos tras 3 intentos</span></div>
+        <div><strong id="acdPendingReconciliation">NO DISPONIBLE</strong><span>Conciliación pendiente</span></div>
+        <div><strong id="acdActiveSessions">NO DISPONIBLE</strong><span>Check-in activo</span></div>
+        <div><strong id="acdSlaAlerts">NO DISPONIBLE</strong><span>Urgentes en la primera página SLA</span></div>
+      </div>
+      <p id="acdMetricsUpdated" class="tkt-visible-count">Última actualización: NO DISPONIBLE</p>
+      <div class="panel-header"><i class="fa-solid fa-user-check"></i><span>Ingenieros con sesión activa</span></div>
+      <p id="acdActiveEngineers" class="acd-engineer-preview">Cargando…</p>
+    </section>
+
+    <!-- ══════════════ MAP + TICKET DETAIL ROW ══════════════ -->
+    <section class="map-detail-row" id="dashboardMapDetailRow">
+
+      <!-- ── MAP ── -->
+      <div class="map-panel" id="mapPanel">
+        <div class="panel-header">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <span>Ubicación de ingenieros</span>
+          <span class="panel-badge real">GPS GS</span>
+        </div>
+        <div id="map"></div>
+        <p id="mapStatus" class="tkt-scope-note" aria-live="polite">Consultando ubicaciones…</p>
+        <div id="mapEngineerList" class="acd-engineer-preview">Sin datos disponibles.</div>
+        <div class="map-legend">
+          <span><span class="legend-dot candidate-dot"></span> Ingeniero con GPS registrado</span>
+        </div>
+        <div class="map-gps-notice">
+          <i class="fa-solid fa-satellite-dish"></i>
+          <strong>GPS INFORMATIVO</strong> — no participa en el score del motor ACD.
+        </div>
+      </div>
+
+      <div class="ticket-panel" id="dashboardSlaPanel">
+        <div class="panel-header"><i class="fa-solid fa-clock"></i><span>Sin asignar · próximos a vencer</span></div>
+        <p class="tkt-scope-note">Consulta global SLA ACD, ordenada por el servidor. Se muestra la primera página; abre Tickets para continuar.</p>
+        <div id="acdUrgentTickets" class="tkt-scope-note" aria-live="polite">Consultando tickets SLA…</div>
+        <button type="button" id="viewUrgentTicketsBtn" class="dashboard-detail-link">Ver tickets</button>
+      </div>
+
+      <!-- ── TICKET DETAIL ── -->
+      <div class="ticket-panel" id="ticketPanel">
+        <div class="panel-header">
+          <i class="fa-solid fa-ticket"></i>
+          <span>Resumen operativo</span>
+          <span class="panel-badge real">REAL</span>
+          <button type="button" id="viewTicketDetailBtn" class="dashboard-detail-link">Ver detalle</button>
+          <button type="button" id="viewCandidatesBtn" class="dashboard-detail-link">Ver candidatos</button>
+          <button type="button" id="ticketHistoryBtn" class="dashboard-detail-link">Historial ACD</button>
+        </div>
+
+        <div class="detail-grid" id="detailGrid">
+          <div class="detail-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ══════════════ MONITORING MATRIX TABLE ══════════════ -->
+    <section class="matrix-section" id="matrixSection">
+      <div class="panel-header">
+        <i class="fa-solid fa-table-cells"></i>
+        <span>Matriz de Monitoreo — Candidatos</span>
+        <span class="panel-badge real">GS · datos verificados</span>
+        <div class="matrix-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="matrixSearch" placeholder="Buscar candidato…" />
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table id="matrixTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+              <th>User ID</th>
+              <th>Email</th>
+              <th>GPS</th>
+              <th>Distancia al Ticket</th>
+              <th>Disponibilidad</th>
+              <th>Tickets Activos</th>
+              <th>Especialidad</th>
+              <th>Zona administrativa</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="matrixBody">
+            <tr>
+              <td colspan="11" class="table-loading">
+                <i class="fa-solid fa-spinner fa-spin"></i> Cargando candidatos…
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="matrix-pagination" aria-label="Paginación de la matriz">
+        <label for="matrixPageSize">Filas por página</label>
+        <select id="matrixPageSize">
+          <option value="20" selected>20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="500">500</option>
+        </select>
+        <span id="matrixRange" aria-live="polite">Mostrando 0–0</span>
+        <span id="matrixCount">0 registros</span>
+        <div class="matrix-pagination-buttons">
+          <button type="button" id="matrixPrevBtn" disabled>Anterior</button>
+          <span id="matrixPageInfo" aria-live="polite">Página 0 de 0</span>
+          <button type="button" id="matrixNextBtn" disabled>Siguiente</button>
+        </div>
+      </div>
+    </section>
+    </div><!-- /dashboardSection -->
+
+    <!-- Sim section removed — results are now shown in #simModalOverlay (modal) -->
+
+    <!-- ══════════════ TICKETS PREPROD SECTION ══════════════ -->
+    <section class="tickets-section route-view" id="ticketsSection" hidden>
+
+      <div class="module-heading">
+        <div><span class="dashboard-eyebrow">OPERACIÓN · PREPROD</span><h1>Tickets</h1></div>
+        <span>Trabajo remoto desde TicketsAPI GS; SLA y jobs desde ACD</span>
+      </div>
+
+      <!-- Fuentes verificadas y alcance -->
+      <div class="tickets-source-bar">
+        <div class="source-tag">
+          <i class="fa-solid fa-database"></i>
+          <strong>Fuentes separadas: TicketsAPI GS / ACD</strong>
+          <span class="source-note">— Trabajo remoto GS no es la cola global pendiente ni tiene prioridad SLA. SLA y jobs requieren autorización ACD.</span>
+        </div>
+        <div class="tickets-controls">
+          <label class="ctrl-label">Tamaño página</label>
+          <select id="tktPageSize">
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <label class="ctrl-label" for="tktStatusFilter">Estado job</label>
+          <select id="tktStatusFilter">
+            <option value="">Todos</option><option value="received">Recibido</option><option value="evaluating">Evaluando</option>
+            <option value="assigning">Asignando</option><option value="waiting_data">Esperando datos</option>
+            <option value="retry_pending">Reintento pendiente</option><option value="assigned">Asignado</option>
+            <option value="no_candidate">Sin candidato</option><option value="failed_review">Revisión por fallo</option>
+            <option value="resolved_externally">Resuelto externamente</option><option value="rejected">Rechazado</option>
+          </select>
+          <button id="tktReloadBtn" class="btn-tkt-ctrl">
+            <i class="fa-solid fa-rotate"></i> Actualizar
+          </button>
+          <button id="tktOpenTicketBtn" type="button" class="btn-tkt-ctrl">Consultar ticket por ID</button>
+          <button id="tktClearTicketFilter" type="button" class="btn-tkt-ctrl" hidden>Quitar filtro de ticket</button>
+          <div class="tkt-pager">
+            <button id="tktPrevBtn" class="btn-pager" disabled aria-label="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>
+            <span id="tktPageInfo">Pág. 1</span>
+            <button id="tktNextBtn" class="btn-pager" disabled aria-label="Página siguiente"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+          <span id="tktCount" class="tkt-count"></span>
+        </div>
+      </div>
+
+      <div class="tkt-tabs" role="tablist" aria-label="Fuentes y vistas de tickets">
+        <button type="button" class="tkt-tab active" data-tab="gs-remote" role="tab" aria-selected="true">Trabajo remoto GS</button>
+        <button type="button" class="tkt-tab" data-tab="unassigned" role="tab" aria-selected="false">Sin asignar · SLA ACD</button>
+        <button type="button" class="tkt-tab" data-tab="assigned" role="tab" aria-selected="false">Asignados · SLA ACD</button>
+        <button type="button" class="tkt-tab" data-tab="errors" role="tab" aria-selected="false">Errores</button>
+        <button type="button" class="tkt-tab" data-tab="jobs" role="tab" aria-selected="false">Jobs ACD</button>
+      </div>
+      <p id="tktGsStatus" class="tkt-scope-note" aria-live="polite">GS: aún no consultado.</p>
+      <p id="tktAcdStatus" class="tkt-scope-note" aria-live="polite">ACD: aún no consultado.</p>
+      <p id="tktScopeNote" class="tkt-scope-note"></p>
+      <p id="tktVisibleCount" class="tkt-visible-count"></p>
+      <div id="tktErrorsEmpty" class="tkt-errors-empty">
+        <i class="fa-solid fa-circle-info"></i>
+        <div><strong>Buscar un ticket</strong><p>Consulta su detalle por ID. La lista SLA requiere acceso ACD.</p>
+          <label for="tktLookupId">Ticket ID</label> <input id="tktLookupId" type="number" min="1" /> <button id="tktLookupBtn" type="button">Consultar</button>
+          <div id="tktLookupResult" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="panel-header" id="ticketsTableHeader" style="margin:0 20px;border-radius:var(--radius) var(--radius) 0 0;border-bottom:none">
+        <i class="fa-solid fa-list-check"></i>
+        <span id="tktTableTitle">Tickets por SLA</span>
+        <span id="tktTableSource" class="panel-badge real">GS</span>
+        <div class="matrix-search" style="margin-left:auto">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="tktSearch" maxlength="100" placeholder="Buscar ticket o evento ACD…" />
+        </div>
+      </div>
+
+      <div class="tickets-table-wrap" id="ticketsTableWrap">
+        <table id="ticketsTable">
+          <thead id="tktTableHead">
+            <tr>
+              <th>Job</th><th>Ticket ID</th><th>Estado ACD</th><th>Intentos</th>
+              <th>Creado UTC</th><th>Actualizado UTC</th><th>Conciliación</th><th>Historial</th>
+            </tr>
+          </thead>
+          <tbody id="ticketsBody">
+            <tr><td colspan="8" class="table-loading">
+              Abre una categoría para consultar tickets…
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="ticketContext" class="ticket-context" hidden>
+        <div class="module-heading"><div><h2>Detalle del ticket</h2></div><button type="button" id="closeTicketContext">Cerrar detalle</button></div>
+      </div>
+    </section>
+
+    <section class="route-view" id="engineersSection" hidden>
+      <div class="module-heading"><div><span class="dashboard-eyebrow">DIRECTORIO GS</span><h1>Ingenieros</h1></div>
+        <button type="button" id="engineerRefresh" class="btn-tkt-ctrl">Actualizar</button></div>
+      <p id="engineerStatus" class="tkt-scope-note" aria-live="polite">Consulta disponible para usuarios autorizados de GS.</p>
+      <p class="tkt-scope-note">Directorio general de ingenieros habilitados. Los servicios autorizados provienen de SystemUserService (SQL GS en tiempo real). La sesión, zona operativa, carga y asignaciones se muestran solo cuando exista una fuente verificable.</p>
+      <div class="candidates-controls"><label for="engineerSearch">Filtrar esta página</label><input id="engineerSearch" type="search" placeholder="Nombre, ID o servicio" />
+        <button type="button" id="engineerPrev" disabled>Anterior</button><span id="engineerPage">Página 1</span><button type="button" id="engineerNext" disabled>Siguiente</button></div>
+      <p id="engineerVisible" class="tkt-visible-count"></p>
+      <div class="tickets-table-wrap"><table><thead><tr><th>ID GS</th><th>Nombre</th><th>Servicios autorizados</th><th>Zona</th><th>Sesión</th><th>Carga</th><th>Asignaciones</th></tr></thead>
+        <tbody id="engineerBody"><tr><td colspan="7" class="table-loading">Abre Ingenieros para consultar el directorio.</td></tr></tbody></table></div>
+    </section>
+
+    <section class="candidates-section route-view" id="candidatesSection" hidden>
+      <div class="module-heading">
+        <div><span class="dashboard-eyebrow">CANDIDATOS · TICKET ACTUAL</span><h1>Candidatos elegibles</h1></div>
+        <span id="candidateTicketContext">Ticket —</span>
+      </div>
+      <p class="candidates-source-note">Candidatos GS del ticket seleccionado. Esta lista depende del ticket y no es el directorio general. GPS informativo; los datos ausentes se muestran como “Sin datos disponibles”.</p>
+      <div class="candidates-controls">
+        <label for="candidateSearch">Buscar</label><input id="candidateSearch" type="search" placeholder="Nombre, ID o correo" />
+        <label for="candidateGpsFilter">GPS</label><select id="candidateGpsFilter"><option value="all">Todos</option><option value="yes">Con GPS</option><option value="no">Sin GPS</option></select>
+        <label for="candidateSessionFilter">Sesión</label><select id="candidateSessionFilter" disabled><option value="all">Sin datos disponibles</option></select>
+        <label for="candidatePageSize">Filas</label><select id="candidatePageSize"><option value="20" selected>20</option><option value="50">50</option><option value="100">100</option><option value="500">500</option></select>
+      </div>
+      <div class="candidates-table-wrap"><table id="candidatesTable"><thead><tr>
+        <th>#</th><th>Nombre</th><th>ID</th><th>Correo</th><th>Sesión activa</th><th>Zona</th><th>Disponibilidad</th><th>Carga</th><th>GPS</th><th>Detalle</th>
+      </tr></thead><tbody id="candidatesBody"><tr><td colspan="10" class="table-loading">Esperando candidatos del ticket…</td></tr></tbody></table></div>
+      <div class="matrix-pagination">
+        <span id="candidateCount">0 candidatos</span><span id="candidateRange">Mostrando 0–0</span>
+        <div class="matrix-pagination-buttons"><button type="button" id="candidatePrevBtn" disabled>Anterior</button><span id="candidatePageInfo">Página 0 de 0</span><button type="button" id="candidateNextBtn" disabled>Siguiente</button></div>
+      </div>
+    </section>
+
+    <!-- ══════════════ WORKFORCE SECTION ══════════════ -->
+    <section class="workforce-section route-view" id="workforceSection" hidden>
+      <div class="panel-header" style="margin:0 20px;border-radius:var(--radius) var(--radius) 0 0;border-bottom:none">
+        <i class="fa-solid fa-users-gear"></i>
+        <span>Sesiones de ingenieros</span>
+        <span class="panel-badge real">ACD</span>
+        <button id="wfRefreshBtn" style="margin-left:auto;padding:.35rem .8rem;background:var(--bg-hover);border:1px solid var(--border);border-radius:6px;color:var(--text-secondary);cursor:pointer;font-size:.8rem">
+          <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+      </div>
+      <div class="wf-controls">
+        <label for="wfScope">Vista</label><select id="wfScope"><option value="active">Check-in activo</option><option value="history">Historial</option></select>
+        <label for="wfHistoryEngineerId">Filtrar historial por ID</label><input id="wfHistoryEngineerId" type="number" min="1" placeholder="Todos" />
+        <button id="wfFilterBtn" type="button">Aplicar</button>
+        <button id="wfPrevBtn" type="button" disabled>Anterior</button><span id="wfPageInfo">Pág. 1</span><button id="wfNextBtn" type="button" disabled>Siguiente</button>
+      </div>
+      <p id="wfScopeNote" class="tkt-scope-note">Sesiones registradas en ACD. GPS informativo.</p>
+      <div style="overflow-x:auto;margin:0 20px 20px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th style="padding:.5rem .75rem;text-align:left;font-size:.78rem;color:var(--text-muted);border-bottom:1px solid var(--border)">Session ID</th>
+              <th style="padding:.5rem .75rem;text-align:left;font-size:.78rem;color:var(--text-muted);border-bottom:1px solid var(--border)">Engineer ID</th>
+              <th style="padding:.5rem .75rem;text-align:left;font-size:.78rem;color:var(--text-muted);border-bottom:1px solid var(--border)">Zona check-in</th>
+              <th style="padding:.5rem .75rem;text-align:left;font-size:.78rem;color:var(--text-muted);border-bottom:1px solid var(--border)">Zona administrativa GS</th>
+              <th style="padding:.5rem .75rem;text-align:left;font-size:.78rem;color:var(--text-muted);border-bottom:1px solid var(--border)">Activa</th>
+              <th style="padding:.5rem .75rem;text-align:left;font-size:.78rem;color:var(--text-muted);border-bottom:1px solid var(--border)">Check-in</th>
+              <th style="padding:.5rem .75rem;text-align:left;font-size:.78rem;color:var(--text-muted);border-bottom:1px solid var(--border)">Check-out</th>
+              <th style="padding:.5rem .75rem;text-align:left;font-size:.78rem;color:var(--text-muted);border-bottom:1px solid var(--border)">GPS informativo</th>
+            </tr>
+          </thead>
+          <tbody id="wfTableBody">
+            <tr><td colspan="8" class="table-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando sesiones…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Check-in protegido hasta que exista identidad y autorización GS verificadas -->
+      <div style="margin:0 20px 24px;padding:1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
+        <div style="font-size:.82rem;font-weight:600;color:var(--text-secondary);margin-bottom:.75rem">
+          <i class="fa-solid fa-lock"></i> Mi sesión
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+          <button id="wfCheckinBtn" disabled
+                  style="padding:.4rem .9rem;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.82rem">
+            <i class="fa-solid fa-right-to-bracket"></i> Check-in
+          </button>
+          <button id="wfCheckoutBtn" disabled
+                  style="padding:.4rem .9rem;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.82rem">
+            <i class="fa-solid fa-right-from-bracket"></i> Check-out
+          </button>
+        </div>
+        <div id="wfCheckinResult" style="margin-top:.5rem;font-size:.82rem;min-height:1rem">Operación deshabilitada hasta validar identidad y permisos GS.</div>
+      </div>
+      <!-- Sesiones de prueba autorizadas (PREPROD) con MySQL real -->
+      <div style="margin:0 20px 24px;padding:1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+          <div style="font-size:.82rem;font-weight:600;color:var(--text-secondary)">
+            <i class="fa-solid fa-vial"></i> Sesión ACD de prueba autorizada (PREPROD)
+          </div>
+          <span class="panel-badge real" style="font-size:.7rem">MySQL acd_db</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.75rem">
+          Acción de prueba manual persistida en MySQL (<code>engineer_sessions</code>). No abre sesiones automáticamente ni afecta datos de producción GS.
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+          <label for="wfTestEngineerSelect" style="font-size:.82rem;color:var(--text-secondary);font-weight:500">Ingeniero del directorio:</label>
+          <select id="wfTestEngineerSelect" style="padding:.4rem .6rem;background:var(--bg-surface, #1e293b);color:var(--text-primary, #fff);border:1px solid var(--border);border-radius:6px;font-size:.82rem">
+            <option value="">Cargando ingenieros del directorio...</option>
+          </select>
+          <button id="wfTestCheckinBtn" type="button"
+                  style="padding:.4rem .9rem;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:500">
+            <i class="fa-solid fa-right-to-bracket"></i> Iniciar turno de prueba
+          </button>
+          <button id="wfTestCheckoutBtn" type="button"
+                  style="padding:.4rem .9rem;background:#ef4444;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:500">
+            <i class="fa-solid fa-right-from-bracket"></i> Finalizar turno de prueba
+          </button>
+        </div>
+        <div id="wfTestActionResult" style="margin-top:.6rem;font-size:.82rem;min-height:1rem;color:var(--text-secondary)"></div>
+      </div>
+    </section>
+
+    <!-- Error Toast -->
+    <div class="toast-container" id="toastContainer"></div>
+
+
+  </main>
+
+  <!-- ════════════════════════════ CANDIDATE DETAIL MODAL ════════════════════════════ -->
+  <div class="modal-overlay" id="modalOverlay" style="display:none">
+    <div class="modal-box" id="modalBox">
+      <button class="modal-close" id="modalClose"><i class="fa-solid fa-xmark"></i></button>
+      <h3 id="modalTitle">Candidato</h3>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════ TICKET DETAIL DRAWER ════════════════════════════ -->
+  <div class="drawer-overlay" id="drawerOverlay" style="display:none">
+    <div class="drawer-box" id="drawerBox">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <i class="fa-solid fa-ticket" style="color:var(--accent)"></i>
+          <span id="drawerTitle">Detalle Ticket</span>
+          <span class="panel-badge real">REAL PREPROD</span>
+        </div>
+        <div class="drawer-actions">
+          <button class="drawer-close" id="drawerClose"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+      <div class="drawer-body" id="drawerBody">
+        <div class="detail-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════ GS AUTH MODAL ════════════════════════════ -->
+  <div class="modal-overlay" id="gsAuthModal" style="display:none">
+    <div class="modal-box" style="max-width:420px">
+      <button class="modal-close" id="gsAuthModalClose"><i class="fa-solid fa-xmark"></i></button>
+      <h3 style="margin-bottom:1rem">
+        <i class="fa-solid fa-shield-halved" style="color:var(--accent)"></i>
+        Autenticación GS PREPROD
+      </h3>
+      <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:1.2rem">
+        Las credenciales se mantienen <strong>solo en memoria</strong> y se borran al recargar o cerrar la pestaña.
+        Nunca se escriben en código fuente ni en almacenamiento web.
+      </p>
+      <div style="margin-bottom:.75rem">
+        <label style="font-size:.8rem;color:var(--text-secondary);margin-bottom:.25rem;display:block">
+          <i class="fa-solid fa-user"></i> Usuario
+        </label>
+        <input type="text" id="gsAuthUserInput" placeholder="usuario@empresa.com" autocomplete="username"
+               style="width:100%;padding:.5rem .75rem;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:.85rem;box-sizing:border-box" />
+      </div>
+      <div style="margin-bottom:1.2rem">
+        <label style="font-size:.8rem;color:var(--text-secondary);margin-bottom:.25rem;display:block">
+          <i class="fa-solid fa-lock"></i> Contraseña
+        </label>
+        <input type="password" id="gsAuthPassInput" placeholder="••••••••" autocomplete="current-password"
+               style="width:100%;padding:.5rem .75rem;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:.85rem;box-sizing:border-box" />
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:center">
+        <button id="gsAuthSubmitBtn"
+                style="flex:1;padding:.6rem 1rem;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:.85rem;cursor:pointer;font-weight:600">
+          <i class="fa-solid fa-right-to-bracket"></i> Autenticar
+        </button>
+        <button id="gsAuthClearBtn"
+                style="padding:.6rem 1rem;background:var(--bg-hover);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;font-size:.82rem;cursor:pointer">
+          <i class="fa-solid fa-trash"></i> Borrar
+        </button>
+      </div>
+      <div id="gsAuthModalResult" style="margin-top:.75rem;font-size:.82rem;min-height:1.2rem"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════ ACD SIMULATION MODAL ════════════════════════════ -->
+  <div class="sim-modal-overlay" id="simModalOverlay" style="display:none" role="dialog" aria-modal="true" aria-label="Simulación ACD">
+    <div class="sim-modal-box">
+
+      <!-- ── Fixed header ── -->
+      <div class="sim-modal-header">
+        <div class="sim-modal-title">
+          <i class="fa-solid fa-flask-vial" style="color:var(--accent)"></i>
+          <span>Simulación ACD — DRY RUN</span>
+          <span class="sim-modal-ticket-label" id="simModalTicketLabel">#—</span>
+          <span class="panel-badge sim" style="font-size:.7rem">DRY-RUN · NO ASIGNA</span>
+        </div>
+        <button class="sim-modal-close" id="simModalClose" title="Cerrar (Esc)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- ── Loading state ── -->
+      <div class="sim-modal-loading" id="simModalLoading">
+        <i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--accent)"></i>
+        <span>Ejecutando simulación ACD…</span>
+      </div>
+
+      <!-- ── Error banner ── -->
+      <div class="sim-modal-error" id="simModalError" style="display:none"></div>
+
+      <!-- ── Scrollable body ── -->
+      <div class="sim-modal-body" id="simModalBody">
+
+        <!-- Stepper -->
+        <div class="stepper-wrap">
+          <div class="stepper" id="simModalStepper">
+            <div class="step" data-step="0">
+              <div class="step-dot"><i class="fa-solid fa-ticket"></i></div>
+              <div class="step-label">Ticket</div>
+            </div>
+            <div class="step" data-step="1">
+              <div class="step-dot"><i class="fa-solid fa-id-badge"></i></div>
+              <div class="step-label">Sesión</div>
+            </div>
+            <div class="step" data-step="2">
+              <div class="step-dot"><i class="fa-solid fa-handshake"></i></div>
+              <div class="step-label">Perm. Cliente</div>
+            </div>
+            <div class="step" data-step="3">
+              <div class="step-dot"><i class="fa-solid fa-shield-halved"></i></div>
+              <div class="step-label">Perm. Servicio</div>
+            </div>
+            <div class="step" data-step="4">
+              <div class="step-dot"><i class="fa-solid fa-weight-scale"></i></div>
+              <div class="step-label">Carga/On-site</div>
+            </div>
+            <div class="step" data-step="5">
+              <div class="step-dot"><i class="fa-solid fa-map-pin"></i></div>
+              <div class="step-label">Geofence</div>
+            </div>
+            <div class="step" data-step="6">
+              <div class="step-dot"><i class="fa-solid fa-star"></i></div>
+              <div class="step-label">Scoring</div>
+            </div>
+            <div class="step" data-step="7">
+              <div class="step-dot"><i class="fa-solid fa-crown"></i></div>
+              <div class="step-label">Winner</div>
+            </div>
+          </div>
+          <div class="step-detail" id="simModalStepDetail"></div>
+        </div>
+
+        <!-- Sources row -->
+        <div class="sources-row" id="simModalSourcesRow" style="display:none">
+          <div class="sources-title"><i class="fa-solid fa-database"></i> Fuentes de datos</div>
+          <div class="sources-list" id="simModalSourcesList"></div>
+          <div class="gaps-list"    id="simModalGapsList"></div>
+        </div>
+
+        <!-- Winner card -->
+        <div class="winner-card" id="simModalWinnerCard" style="display:none">
+          <div class="winner-header">
+            <i class="fa-solid fa-crown"></i>
+            <span id="simModalWinnerLabel">Winner Simulado</span>
+            <span class="panel-badge sim">DRY-RUN · NO ASIGNADO</span>
+          </div>
+          <div class="winner-body" id="simModalWinnerBody"></div>
+        </div>
+
+        <!-- Meta panel -->
+        <div class="sim-meta-panel" id="simModalMetaPanel" style="display:none">
+          <div class="sim-meta-header">
+            <i class="fa-solid fa-shield-check"></i>
+            <span>Motor ACD — Diagnóstico PREPROD</span>
+            <span class="panel-badge real">REAL</span>
+          </div>
+          <div class="sim-meta-body">
+            <div class="sim-meta-row">
+              <span class="sim-meta-label">production_ready</span>
+              <span class="sim-meta-value" id="simModalMetaReady">—</span>
+            </div>
+            <div class="sim-meta-row">
+              <span class="sim-meta-label">decision_is_partial</span>
+              <span class="sim-meta-value" id="simModalMetaPartial">—</span>
+            </div>
+            <div class="sim-meta-row">
+              <span class="sim-meta-label">ticket_id</span>
+              <span class="sim-meta-value" id="simModalMetaTicketId">—</span>
+            </div>
+            <div class="sim-meta-row" id="simModalMetaMissing" style="display:none">
+              <span class="sim-meta-label">missing_requirements</span>
+              <span class="sim-meta-value" id="simModalMetaMissingList"></span>
+            </div>
+            <div class="sim-meta-row" id="simModalMetaWarnings" style="display:none">
+              <span class="sim-meta-label">warnings</span>
+              <span class="sim-meta-value" id="simModalMetaWarnList"></span>
+            </div>
+            <div class="sim-meta-row">
+              <span class="sim-meta-label">data_quality</span>
+              <span class="sim-meta-value" id="simModalMetaDq"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Candidate evaluation table -->
+        <div class="sim-table-wrap" id="simModalTableWrap" style="display:none">
+          <div class="panel-header" style="border-radius:var(--radius-sm) var(--radius-sm) 0 0">
+            <i class="fa-solid fa-table-list"></i>
+            <span>Candidatos evaluados por el Motor ACD</span>
+            <span class="panel-badge sim">DRY-RUN</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table id="simModalTable" style="width:100%;border-collapse:collapse;font-size:.82rem">
+              <thead>
+                <tr>
+                  <th class="sim-th">Rk.</th>
+                  <th class="sim-th">Candidato</th>
+                  <th class="sim-th">User ID</th>
+                  <th class="sim-th">Elegible</th>
+                  <th class="sim-th">Step descarte</th>
+                  <th class="sim-th">Motivo descarte</th>
+                  <th class="sim-th">Score</th>
+                  <th class="sim-th">Sesión</th>
+                  <th class="sim-th">On-site</th>
+                  <th class="sim-th">Zona ID</th>
+                  <th class="sim-th">Carga activa</th>
+                  <th class="sim-th">GPS (info)</th>
+                </tr>
+              </thead>
+              <tbody id="simModalTableBody">
+                <tr><td colspan="12" class="table-loading">Ejecutando simulación…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- GPS notice -->
+        <div class="gps-info-notice">
+          <i class="fa-solid fa-satellite-dish"></i>
+          <span><strong>GPS INFORMATIVO</strong> — no participa en el score ACD. El motor usa sesión activa, permisos, carga y geofence.</span>
+        </div>
+
+      </div><!-- /sim-modal-body -->
+    </div><!-- /sim-modal-box -->
+  </div><!-- /simModalOverlay -->
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- App JS — ES Module entry point (Fase 1) -->
+  <script type="module" src="js/app.js?v=20260928-acd-engineers"></script>
+</body>
+</html>

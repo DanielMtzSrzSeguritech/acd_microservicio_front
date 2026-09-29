@@ -1,0 +1,68 @@
+/* Ajustes del Dashboard sobre el tema oscuro existente. */
+.dashboard-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 25px 20px 4px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+.dashboard-eyebrow { color: var(--accent); font-size: .68rem; font-weight: 800; letter-spacing: .14em; }
+.dashboard-intro h1 { margin: 4px 0 3px; font-size: clamp(1.45rem, 2.2vw, 2rem); line-height: 1.15; color: var(--text-primary); }
+.dashboard-intro p { margin: 0; color: var(--text-muted); font-size: .82rem; }
+
+#dashboardSection .simulated-alert { max-width: 1560px; margin: 12px auto 0; padding: 8px 14px; font-size: .72rem; }
+#dashboardSection .cards-grid { max-width: 1600px; margin: 0 auto; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; padding-top: 14px; }
+#dashboardSection .card { padding: 12px 14px; min-width: 0; gap: 10px; box-shadow: none; }
+#dashboardSection .card-icon { width: 36px; height: 36px; font-size: 1rem; }
+#dashboardSection .card-value { font-size: 1.22rem; }
+#dashboardSection .card-value-sm { font-size: .8rem; }
+#dashboardSection .map-detail-row { max-width: 1600px; margin: 0 auto; grid-template-columns: minmax(0, 1.55fr) minmax(320px, .9fr); }
+.ticket-context { margin: 20px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+.ticket-context[hidden], #simulatedAlert[hidden] { display: none !important; }
+.ticket-context .ticket-input-group { display: flex; flex-wrap: wrap; margin: 10px 0; }
+.ticket-context .cards-grid { padding: 10px 0; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.ticket-context .ticket-panel, .ticket-context .matrix-section, .ticket-context .candidates-section { margin: 12px 0; width: 100%; }
+#mapStatus, #mapEngineerList { padding: 8px 14px; }
+.engineer-map-pin { background: #3b82f6; border: 2px solid #fff; border-radius: 50%; width: 22px; height: 22px; box-shadow: 0 2px 8px #0008; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; }
+#acdUrgentTickets button.acd-engineer-chip { cursor: pointer; border: 1px solid var(--border); background: var(--bg-hover); color: var(--text-primary); margin: 3px; }
+#engineersSection .tickets-table-wrap { margin: 12px 20px 24px; }
+#engineersSection .tickets-table-wrap table { width: 100%; }
+#engineersSection .tickets-table-wrap th, #engineersSection .tickets-table-wrap td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
+@media (max-width: 1000px) { .ticket-context .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+#dashboardSection #map { min-height: 330px; }
+#dashboardSection #ticketPanel .detail-grid { align-content: start; }
+#dashboardSection #ticketPanel .detail-item:nth-child(5),
+#dashboardSection #ticketPanel .detail-item:nth-child(6),
+#dashboardSection #ticketPanel .detail-item:nth-child(7),
+#dashboardSection #ticketPanel .detail-item:nth-child(8),
+#dashboardSection #ticketPanel .detail-item:nth-child(n+11) { display: none; }
+.dashboard-detail-link { margin-left: auto; padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--accent); font-size: .72rem; cursor: pointer; }
+.dashboard-detail-link:hover { border-color: var(--accent); }
+#ticketSection .dashboard-detail-link { display: none; }
+#dashboardSection .matrix-section { max-width: 1560px; margin-left: auto; margin-right: auto; }
+
+@media (max-width: 1200px) {
+  #dashboardSection .cards-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 1000px) {
+  .topbar { height: auto; min-height: var(--topbar-h); flex-wrap: wrap; padding: 10px 14px; gap: 8px; }
+  .topbar-right { width: 100%; margin-left: 0; gap: 8px; }
+}
+@media (max-width: 950px) {
+  #dashboardSection .map-detail-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 650px) {
+  .topbar { position: static; }
+  .ticket-input-group { width: 100%; flex-wrap: wrap; }
+  .ticket-input-group input { flex: 1 1 100px; }
+  .dashboard-intro { padding: 18px 12px 0; align-items: flex-start; }
+  #dashboardSection .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px 10px 0; }
+  #dashboardSection .map-detail-row { padding: 10px; }
+  #dashboardSection .simulated-alert { margin: 10px 10px 0; }
+  #dashboardSection .matrix-section { margin: 10px; }
+}
+@media (max-width: 420px) {
+  #dashboardSection .cards-grid { grid-template-columns: 1fr; }
+}

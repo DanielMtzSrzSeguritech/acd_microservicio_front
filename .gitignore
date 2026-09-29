@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment files & Secrets
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+
+# Backups & Temp
+*.bak
+*.bak-*
+*.backup
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+*.err
+*.pid
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
